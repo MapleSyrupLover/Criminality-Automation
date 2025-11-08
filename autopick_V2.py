@@ -3,6 +3,8 @@
 # Permission is hereby granted, free of charge, to use and distribute this software
 # provided that this notice remains in all copies.
 
+#AUTOPICK VERSION 2.1 - MapleSyrupLover
+
 import time
 import ctypes
 import pyautogui
@@ -20,8 +22,8 @@ COLOR_TOLERANCE = 2
 NEAR_WHITE_THRESHOLD = 245  
 
 # coordinates
-SAFE_3_COORDS = [(825, 552), (960, 561), (1095, 552)]
-SAFE_2_COORDS = [(890, 552), (1025, 561)]
+SAFE_3_COORDS = [(825, 552), (960, 551), (1095, 552)]
+SAFE_2_COORDS = [(890, 552), (1025, 551)]
 SAFE_1_COORDS = [(960, 552)]
 
 # keybinds
