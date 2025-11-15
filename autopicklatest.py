@@ -3,7 +3,7 @@
 # Permission is hereby granted, free of charge, to use and distribute this software
 # provided that this notice remains in all copies.
 
-#AUTOPICK VERSION 2.1 - MapleSyrupLover
+#AUTOPICK VERSION 2.3.0 - MapleSyrupLover
 
 import time
 import ctypes
@@ -22,9 +22,9 @@ COLOR_TOLERANCE = 2
 NEAR_WHITE_THRESHOLD = 245  
 
 # coordinates
-SAFE_3_COORDS = [(825, 552), (960, 551), (1095, 552)]
-SAFE_2_COORDS = [(890, 552), (1025, 551)]
-SAFE_1_COORDS = [(960, 552)]
+SAFE_3_COORDS = [(825, 553), (960, 561), (1095, 553)]
+SAFE_2_COORDS = [(890, 553), (1025, 561)]
+SAFE_1_COORDS = [(960, 553)]
 
 # keybinds
 KEY_3SAFE = 'q'
@@ -32,11 +32,11 @@ KEY_2SAFE = 'v'
 KEY_1SAFE = 'b'
 
 # sampling region size (even number). Smaller = faster, less robust.
-SAMPLE_SIZE = 2 
+SAMPLE_SIZE = 2
 
 # performance tuning
 POLL_INTERVAL = 0.008  
-WAIT_TIMEOUT = 0.45    # seconds to wait for next lock to appear
+WAIT_TIMEOUT = 0.40    # seconds to wait for next lock to appear
 
 # pyautogui tweaks
 pyautogui.PAUSE = 0
@@ -130,26 +130,49 @@ def do_click_if_region(x: int, y: int) -> bool:
         return True
     return False
 
+_3safe_state = 0  
+_3safe_start_time = 0
+
 def run_3safe():
-  
-    if do_click_if_region(*SAFE_3_COORDS[0]):
-        print("3-Safe: Lock 1 done")
+    global _3safe_state, _3safe_start_time
+    
+    # Reset if timeout exceeded (safety net - 1 second)
+    if _3safe_state > 0 and time.time() - _3safe_start_time > 1.0:
+        _3safe_state = 0
+    
+    if _3safe_state == 0:
+        # Looking for Lock 1
+        if do_click_if_region(*SAFE_3_COORDS[0]):
+            print("3-Safe: Lock 1 done")
+            _3safe_state = 1
+            _3safe_start_time = time.time()
+    
+    elif _3safe_state == 1:
+        # Looking for Lock 2
         if wait_for_region(*SAFE_3_COORDS[1]):
             if is_key_down(KEY_3SAFE):
                 pyautogui.click()
                 print("3-Safe: Lock 2 done")
-                if wait_for_region(*SAFE_3_COORDS[2]):
-                    if is_key_down(KEY_3SAFE):
-                        pyautogui.click()
-                        print("3-Safe: Lock 3 done")
-                        return
-                start = time.time()
-                while is_key_down(KEY_3SAFE) and time.time() - start < 0.16:
-                    if region_has_target(*SAFE_3_COORDS[2]):
-                        pyautogui.click()
-                        print("3-Safe: Lock 3 done (fallback)")
-                        return
-                    time.sleep(POLL_INTERVAL)
+                _3safe_state = 2
+                _3safe_start_time = time.time()
+    
+    elif _3safe_state == 2:
+        # Looking for Lock 3
+        if wait_for_region(*SAFE_3_COORDS[2]):
+            if is_key_down(KEY_3SAFE):
+                pyautogui.click()
+                print("3-Safe: Lock 3 done")
+                _3safe_state = 0
+                return
+        # fallback
+        start = time.time()
+        while is_key_down(KEY_3SAFE) and time.time() - start < 0.16:
+            if region_has_target(*SAFE_3_COORDS[2]):
+                pyautogui.click()
+                print("3-Safe: Lock 3 done (fallback)")
+                _3safe_state = 0
+                return
+            time.sleep(POLL_INTERVAL)
 
 def run_2safe():
     if do_click_if_region(*SAFE_2_COORDS[0]):
