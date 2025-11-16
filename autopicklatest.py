@@ -17,11 +17,11 @@ try:
 except Exception:
     HAVE_MSS = False
 
-TARGET_COLORS = [(255, 255, 255), (143, 143, 143)]  
-COLOR_TOLERANCE = 2          
-NEAR_WHITE_THRESHOLD = 245  
+TARGET_COLORS = [(255, 255, 255), (143, 143, 143)]
+COLOR_TOLERANCE = 2
+NEAR_WHITE_THRESHOLD = 245
 
-# coordinates
+# coordinates IMPORTANT: these must match your screen resolution and UI scale
 SAFE_3_COORDS = [(825, 553), (960, 561), (1095, 553)]
 SAFE_2_COORDS = [(890, 553), (1025, 561)]
 SAFE_1_COORDS = [(960, 553)]
@@ -31,14 +31,14 @@ KEY_3SAFE = 'q'
 KEY_2SAFE = 'v'
 KEY_1SAFE = 'b'
 
-# sampling region size (even number). Smaller = faster, less robust.
+# sampling region size (MUST BE EVEN) size of square region to sample around target pixel
 SAMPLE_SIZE = 2
 
-# performance tuning
-POLL_INTERVAL = 0.008  
-WAIT_TIMEOUT = 0.40    # seconds to wait for next lock to appear
+# DONT CHANGE IF YOWU DONT KNOW WHAT YOU ARE DOING
+POLL_INTERVAL = 0.008
+WAIT_TIMEOUT = 0.40
 
-# pyautogui tweaks
+# pyautogui settings
 pyautogui.PAUSE = 0
 pyautogui.FAILSAFE = False
 
@@ -64,7 +64,8 @@ def _matches_color(px):
         if abs(r - c[0]) <= COLOR_TOLERANCE and abs(g - c[1]) <= COLOR_TOLERANCE and abs(b - c[2]) <= COLOR_TOLERANCE:
             return True
     return False
-
+# THE BELOW FUNCTIONS RELY ON MSS OR NUMPY FOR FASTER SCREEN SAMPLING
+# THEY ARE NOT FINISHED AND HAVE NOT ENTIRELY BEEN TESTED YET (USE AT YOUR OWN RISK)
 if HAVE_MSS:
     sct = mss.mss()
     def sample_region(x, y, size):
@@ -90,7 +91,7 @@ else:
 def region_has_target(x: int, y: int, size: int = SAMPLE_SIZE) -> bool:
     data = sample_region(x, y, size)
     if data is None:
-        # best-effort single pixel read fallback (fast)
+        # FAST fallback to single pixel check
         try:
             px = pyautogui.pixel(x, y)
         except Exception:
@@ -126,7 +127,7 @@ def wait_for_region(x: int, y: int, timeout: float = WAIT_TIMEOUT) -> bool:
 
 def do_click_if_region(x: int, y: int) -> bool:
     if region_has_target(x, y):
-        pyautogui.click()  # click where the mouse currently is
+        pyautogui.click()  
         return True
     return False
 
@@ -141,14 +142,12 @@ def run_3safe():
         _3safe_state = 0
     
     if _3safe_state == 0:
-        # Looking for Lock 1
         if do_click_if_region(*SAFE_3_COORDS[0]):
             print("3-Safe: Lock 1 done")
             _3safe_state = 1
             _3safe_start_time = time.time()
     
     elif _3safe_state == 1:
-        # Looking for Lock 2
         if wait_for_region(*SAFE_3_COORDS[1]):
             if is_key_down(KEY_3SAFE):
                 pyautogui.click()
@@ -157,7 +156,6 @@ def run_3safe():
                 _3safe_start_time = time.time()
     
     elif _3safe_state == 2:
-        # Looking for Lock 3
         if wait_for_region(*SAFE_3_COORDS[2]):
             if is_key_down(KEY_3SAFE):
                 pyautogui.click()
@@ -190,8 +188,7 @@ def run_2safe():
 def run_1safe():
     if do_click_if_region(*SAFE_1_COORDS[0]):
         print("1-Safe: Lock done")
-
-# -------- main loop --------
+# MAIN LOOP
 def main_loop():
     print(f"Hold '{KEY_3SAFE}' for 3-safe, '{KEY_2SAFE}' for 2-safe, '{KEY_1SAFE}' for 1-safe. Ctrl+C to exit.")
     try:
